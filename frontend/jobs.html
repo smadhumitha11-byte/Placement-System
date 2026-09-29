@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobs - Placement Cell Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav id="navbar"></nav>
+
+    <main class="container">
+        <h2 class="section-title" style="margin-top:0;">Available Jobs</h2>
+        <div id="pageMessage" class="alert"></div>
+
+        <form id="searchForm" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <input type="text" id="searchBox" placeholder="Search by job title, company or location"
+                   style="flex:1;min-width:200px;">
+            <button type="submit" class="btn">Search</button>
+            <button type="button" class="btn btn-light" id="clearBtn" style="border:1px solid var(--border);">Clear</button>
+        </form>
+
+        <div id="jobList" class="grid"><p>Loading...</p></div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        requireLogin("student");
+
+        const jobList = document.getElementById("jobList");
+
+        async function loadJobs() {
+            const search = document.getElementById("searchBox").value.trim();
+            jobList.innerHTML = "<p>Loading...</p>";
+            try {
+                const jobs = await apiRequest("/jobs?search=" + encodeURIComponent(search));
+                if (jobs.length === 0) {
+                    jobList.innerHTML = "<p>No open jobs found.</p>";
+                    return;
+                }
+                jobList.innerHTML = jobs.map(function (j) {
+                    return '<div class="card">' +
+                        "<h3>" + escapeHtml(j.title) + "</h3>" +
+                        "<p><strong>" + escapeHtml(j.company_name) + "</strong></p>" +
+                        "<p>" + escapeHtml(j.location || "Location not stated") + "</p>" +
+                        "<p>Package: " + escapeHtml(j.package_lpa === null ? "Not stated" : j.package_lpa + " LPA") + "</p>" +
+                        "<p>Minimum CGPA: " + escapeHtml(j.min_cgpa) + "</p>" +
+                        "<p>Departments: " + escapeHtml(j.allowed_departments) + "</p>" +
+                        "<p>Deadline: " + escapeHtml(j.deadline || "None") + "</p>" +
+                        "<p>" + escapeHtml(j.description || "") + "</p>" +
+                        '<div id="result-' + j.id + '" class="field-error" style="margin:8px 0;"></div>' +
+                        '<button type="button" class="btn btn-small btn-light" style="border:1px solid var(--border);" ' +
+                            'data-action="check" data-id="' + j.id + '">Check Eligibility</button> ' +
+                        '<button type="button" class="btn btn-small" data-action="apply" data-id="' + j.id + '">Apply</button>' +
+                        "</div>";
+                }).join("");
+            } catch (error) {
+                jobList.innerHTML = "";
+                showMessage("pageMessage", error.message, "error");
+            }
+        }
+
+        // One click listener for all the buttons inside the job cards
+        jobList.addEventListener("click", async function (event) {
+            const button = event.target.closest("button");
+            if (!button) return;
+
+            const id = button.getAttribute("data-id");
+            const action = button.getAttribute("data-action");
+            const resultBox = document.getElementById("result-" + id);
+            hideMessage("pageMessage");
+
+            if (action === "check") {
+                try {
+                    const r = await apiRequest("/jobs/" + id + "/eligibility");
+                    if (r.eligible) {
+                        resultBox.style.color = "var(--success)";
+                        resultBox.textContent = "You are eligible for this job.";
+                    } else {
+                        resultBox.style.color = "var(--danger)";
+                        resultBox.textContent = "Not eligible: " + r.reasons.join(" ");
+                    }
+                } catch (error) {
+                    resultBox.style.color = "var(--danger)";
+                    resultBox.textContent = error.message;
+                }
+            }
+
+            if (action === "apply") {
+                button.disabled = true;
+                try {
+                    await apiRequest("/applications", {
+                        method: "POST",
+                        body: JSON.stringify({ job_id: Number(id) })
+                    });
+                    resultBox.style.color = "var(--success)";
+                    resultBox.textContent = "Application submitted. See My Applications.";
+                } catch (error) {
+                    resultBox.style.color = "var(--danger)";
+                    resultBox.textContent = error.message;
+                } finally {
+                    button.disabled = false;
+                }
+            }
+        });
+
+        document.getElementById("searchForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            loadJobs();
+        });
+        document.getElementById("clearBtn").addEventListener("click", function () {
+            document.getElementById("searchBox").value = "";
+            loadJobs();
+        });
+
+        loadJobs();
+    </script>
+</body>
+</html>

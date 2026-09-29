@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Placement Cell Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav id="navbar"></nav>
+
+    <main class="container">
+        <h2 class="section-title" style="margin-top:0;">Student Dashboard</h2>
+        <div id="pageMessage" class="alert"></div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Placement Status</h3>
+                <div id="placementBox"><p>Loading...</p></div>
+            </div>
+            <div class="card">
+                <h3>Resume</h3>
+                <p id="resumeStatus">Loading...</p>
+                <div class="form-group" style="margin-top:10px;">
+                    <input type="file" id="resumeFile" accept="application/pdf">
+                    <div class="field-error" id="resumeFile-error"></div>
+                </div>
+                <button type="button" class="btn btn-small" id="uploadBtn">Upload PDF (max 2 MB)</button>
+            </div>
+        </div>
+
+        <h2 class="section-title">My Profile</h2>
+        <div class="card">
+            <form id="profileForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="p-name">Full Name</label>
+                        <input type="text" id="p-name">
+                        <div class="field-error" id="p-name-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-roll_no">Roll Number (cannot be changed)</label>
+                        <input type="text" id="p-roll_no" disabled>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="p-email">Email (cannot be changed)</label>
+                        <input type="text" id="p-email" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-phone">Phone (10 digits)</label>
+                        <input type="text" id="p-phone" maxlength="10">
+                        <div class="field-error" id="p-phone-error"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="p-department">Department</label>
+                        <select id="p-department">
+                            <option value="">Select</option>
+                            <option>CSE</option>
+                            <option>IT</option>
+                            <option>ECE</option>
+                            <option>EEE</option>
+                            <option>MECH</option>
+                            <option>CIVIL</option>
+                            <option>AIDS</option>
+                        </select>
+                        <div class="field-error" id="p-department-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-year">Year</label>
+                        <select id="p-year">
+                            <option value="">Select</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                        <div class="field-error" id="p-year-error"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="p-cgpa">CGPA (0 to 10)</label>
+                    <input type="number" id="p-cgpa" step="0.01" min="0" max="10">
+                    <div class="field-error" id="p-cgpa-error"></div>
+                </div>
+                <button type="submit" class="btn" id="saveBtn">Save Profile</button>
+            </form>
+        </div>
+
+        <h2 class="section-title">Notifications</h2>
+        <div class="card">
+            <div id="notificationList"><p>Loading...</p></div>
+            <button type="button" class="btn btn-small" id="readAllBtn" style="margin-top:10px;">Mark all as read</button>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        requireLogin("student");
+
+        // ----- Load the profile into the form -----
+        async function loadProfile() {
+            try {
+                const s = await apiRequest("/students/profile");
+                document.getElementById("p-name").value = s.name;
+                document.getElementById("p-roll_no").value = s.roll_no || "";
+                document.getElementById("p-email").value = s.email;
+                document.getElementById("p-phone").value = s.phone || "";
+                document.getElementById("p-department").value = s.department || "";
+                document.getElementById("p-year").value = s.year || "";
+                document.getElementById("p-cgpa").value = s.cgpa === null ? "" : s.cgpa;
+                document.getElementById("resumeStatus").textContent = s.resume_path
+                    ? "Resume uploaded. You can upload a new one to replace it."
+                    : "No resume uploaded yet.";
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            }
+        }
+
+        // ----- Save the profile -----
+        document.getElementById("profileForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            hideMessage("pageMessage");
+
+            const name = document.getElementById("p-name").value.trim();
+            const phone = document.getElementById("p-phone").value.trim();
+            const department = document.getElementById("p-department").value;
+            const year = document.getElementById("p-year").value;
+            const cgpa = document.getElementById("p-cgpa").value;
+
+            let ok = true;
+            ok = setFieldError("p-name", name.length < 2 ? "Enter your full name." : "") && ok;
+            ok = setFieldError("p-phone", !PHONE_PATTERN.test(phone) ? "Enter a 10 digit phone number." : "") && ok;
+            ok = setFieldError("p-department", department === "" ? "Select a department." : "") && ok;
+            ok = setFieldError("p-year", year === "" ? "Select your year." : "") && ok;
+            ok = setFieldError("p-cgpa",
+                (cgpa === "" || Number(cgpa) < 0 || Number(cgpa) > 10) ? "CGPA must be between 0 and 10." : "") && ok;
+            if (!ok) return;
+
+            const button = document.getElementById("saveBtn");
+            button.disabled = true;
+            try {
+                await apiRequest("/students/profile", {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        name: name, phone: phone, department: department,
+                        year: Number(year), cgpa: Number(cgpa)
+                    })
+                });
+                localStorage.setItem("name", name);
+                renderNavbar();
+                showMessage("pageMessage", "Profile saved.", "success");
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // ----- Upload the resume -----
+        document.getElementById("uploadBtn").addEventListener("click", async function () {
+            hideMessage("pageMessage");
+            const fileInput = document.getElementById("resumeFile");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                setFieldError("resumeFile", "Choose a PDF file first.");
+                return;
+            }
+            if (file.type !== "application/pdf") {
+                setFieldError("resumeFile", "Only PDF files are allowed.");
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                setFieldError("resumeFile", "File is larger than 2 MB.");
+                return;
+            }
+            setFieldError("resumeFile", "");
+
+            const formData = new FormData();
+            formData.append("resume", file);   // the name "resume" must match the backend
+
+            try {
+                await apiRequest("/students/resume", { method: "POST", body: formData });
+                fileInput.value = "";
+                showMessage("pageMessage", "Resume uploaded.", "success");
+                loadProfile();
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            }
+        });
+
+        // ----- Placement status -----
+        async function loadPlacement() {
+            const box = document.getElementById("placementBox");
+            try {
+                const data = await apiRequest("/applications/placement");
+                if (!data.placed) {
+                    box.innerHTML = '<p><span class="badge badge-applied">Not placed yet</span></p>' +
+                                    '<p>Keep applying. Your result will appear here.</p>';
+                    return;
+                }
+                box.innerHTML = data.records.map(function (r) {
+                    return '<p><span class="badge badge-selected">Placed</span></p>' +
+                           "<p><strong>" + escapeHtml(r.company_name) + "</strong> - " + escapeHtml(r.title) + "</p>" +
+                           "<p>Package: " + escapeHtml(r.package_lpa === null ? "Not stated" : r.package_lpa + " LPA") + "</p>";
+                }).join("");
+            } catch (error) {
+                box.innerHTML = "<p>Could not load placement status.</p>";
+            }
+        }
+
+        // ----- Notifications -----
+        async function loadNotifications() {
+            const box = document.getElementById("notificationList");
+            try {
+                const list = await apiRequest("/notifications");
+                if (list.length === 0) {
+                    box.innerHTML = "<p>No notifications yet.</p>";
+                    return;
+                }
+                box.innerHTML = list.map(function (n) {
+                    const style = n.is_read ? "" : "font-weight:600;";
+                    return '<p style="' + style + 'padding:6px 0;border-bottom:1px solid var(--border);">' +
+                           escapeHtml(n.message) +
+                           ' <small style="color:var(--muted);">(' + escapeHtml(String(n.created_at).slice(0, 16)) + ")</small></p>";
+                }).join("");
+            } catch (error) {
+                box.innerHTML = "<p>Could not load notifications.</p>";
+            }
+        }
+
+        document.getElementById("readAllBtn").addEventListener("click", async function () {
+            try {
+                await apiRequest("/notifications/read-all", { method: "PUT" });
+                loadNotifications();
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            }
+        });
+
+        loadProfile();
+        loadPlacement();
+        loadNotifications();
+    </script>
+</body>
+</html>
