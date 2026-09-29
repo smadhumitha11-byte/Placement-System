@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Placement Cell Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav id="navbar"></nav>
+
+    <main class="container">
+        <div class="card form-card">
+            <h2>Login</h2>
+            <p class="subtitle">Choose who you are and sign in.</p>
+
+            <div id="message" class="alert"></div>
+
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="role">I am a</label>
+                    <select id="role">
+                        <option value="student">Student</option>
+                        <option value="recruiter">Recruiter (Company)</option>
+                        <option value="admin">Placement Cell Admin</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="identifier" id="identifierLabel">Email</label>
+                    <input type="text" id="identifier" autocomplete="username">
+                    <div class="field-error" id="identifier-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" autocomplete="current-password">
+                    <div class="field-error" id="password-error"></div>
+                </div>
+
+                <button type="submit" class="btn btn-block" id="loginBtn">Login</button>
+            </form>
+
+            <p class="form-footer">New here? <a href="register.html">Create an account</a></p>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        const roleSelect = document.getElementById("role");
+        const identifierLabel = document.getElementById("identifierLabel");
+
+        // Admins log in with a username, everyone else with an email
+        roleSelect.addEventListener("change", function () {
+            identifierLabel.textContent = roleSelect.value === "admin" ? "Username" : "Email";
+        });
+
+        // Which API to call and which page to open for each role
+        const loginSettings = {
+            student:   { url: "/auth/student/login", page: "student.html" },
+            recruiter: { url: "/auth/company/login", page: "recruiter.html" },
+            admin:     { url: "/auth/admin/login",   page: "admin.html" }
+        };
+
+        document.getElementById("loginForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            hideMessage("message");
+
+            const role = roleSelect.value;
+            const identifier = document.getElementById("identifier").value.trim();
+            const password = document.getElementById("password").value;
+
+            // ----- Validation -----
+            let ok = true;
+            if (identifier === "") {
+                ok = setFieldError("identifier", "This field is required.") && ok;
+            } else if (role !== "admin" && !EMAIL_PATTERN.test(identifier)) {
+                ok = setFieldError("identifier", "Enter a valid email address.") && ok;
+            } else {
+                setFieldError("identifier", "");
+            }
+            if (password === "") {
+                ok = setFieldError("password", "Password is required.") && ok;
+            } else {
+                setFieldError("password", "");
+            }
+            if (!ok) return;
+
+            // ----- Send to the backend -----
+            const body = role === "admin"
+                ? { username: identifier, password: password }
+                : { email: identifier, password: password };
+
+            const button = document.getElementById("loginBtn");
+            button.disabled = true;
+            button.textContent = "Signing in...";
+
+            try {
+                const data = await apiRequest(loginSettings[role].url, {
+                    method: "POST",
+                    body: JSON.stringify(body)
+                });
+                saveLogin(data);
+                window.location.href = loginSettings[role].page;
+            } catch (error) {
+                showMessage("message", error.message, "error");
+            } finally {
+                button.disabled = false;
+                button.textContent = "Login";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -3,445 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Registration - Placement Cell</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 30px;
-        }
-
-        .container {
-            width: 520px;
-            background: white;
-            padding: 35px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 5px;
-            color: #1f3c88;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 5px;
-            color: #333;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #777;
-            margin-bottom: 25px;
-        }
-
-        .form-group {
-            margin-bottom: 17px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 7px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 7px;
-            font-size: 15px;
-            background: white;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: #1f3c88;
-            box-shadow: 0 0 4px rgba(31, 60, 136, 0.25);
-        }
-
-        .password-box {
-            display: flex;
-            gap: 8px;
-        }
-
-        .password-box input {
-            flex: 1;
-        }
-
-        .password-box button {
-            width: 65px;
-            border: none;
-            border-radius: 7px;
-            background: #e9edf5;
-            cursor: pointer;
-        }
-
-        .password-box button:hover {
-            background: #d6dce8;
-        }
-
-        .register-btn {
-            width: 100%;
-            padding: 13px;
-            border: none;
-            border-radius: 7px;
-            background: #1f3c88;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-
-        .register-btn:hover:not(:disabled) {
-            background: #162f6b;
-        }
-
-        .register-btn:disabled {
-            background: #8a99bd;
-            cursor: not-allowed;
-        }
-
-        #message {
-            text-align: center;
-            margin-top: 18px;
-            font-weight: bold;
-            min-height: 20px;
-        }
-
-        .success {
-            color: green;
-        }
-
-        .error {
-            color: red;
-        }
-
-        .login-text {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .login-text a {
-            color: #1f3c88;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                width: 100%;
-                padding: 25px;
-            }
-        }
-    </style>
+    <title>Register - Placement Cell Portal</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+    <nav id="navbar"></nav>
 
-<div class="container">
+    <main class="container">
+        <div class="card form-card">
+            <h2>Create an Account</h2>
+            <p class="subtitle">Register as a student or as a company recruiter.</p>
 
-    <h1>Placement Cell</h1>
-
-    <h2>Student Registration</h2>
-
-    <p class="subtitle">Create your student account</p>
-
-    <form id="registerForm" novalidate>
-
-        <div class="form-group">
-            <label for="name">Full Name</label>
-            <input
-                type="text"
-                id="name"
-                placeholder="Enter your full name"
-                required>
-        </div>
-
-        <div class="form-group">
-            <label for="rollNo">Roll Number</label>
-            <input
-                type="text"
-                id="rollNo"
-                placeholder="Enter your roll number"
-                required>
-        </div>
-
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input
-                type="email"
-                id="email"
-                placeholder="Enter your email"
-                required>
-        </div>
-
-        <div class="form-group">
-            <label for="password">Password</label>
-
-            <div class="password-box">
-
-                <input
-                    type="password"
-                    id="password"
-                    placeholder="Min 8 chars, upper/lower/digit"
-                    minlength="8"
-                    required>
-
-                <button
-                    type="button"
-                    id="showPassword"
-                    aria-label="Toggle password visibility">
-                    Show
-                </button>
-
+            <div class="tabs">
+                <button type="button" class="tab-btn active" id="studentTab">Student</button>
+                <button type="button" class="tab-btn" id="companyTab">Company</button>
             </div>
+
+            <div id="message" class="alert"></div>
+
+            <!-- ===== STUDENT FORM ===== -->
+            <form id="studentForm" novalidate>
+                <div class="form-group">
+                    <label for="s-name">Full Name</label>
+                    <input type="text" id="s-name">
+                    <div class="field-error" id="s-name-error"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="s-roll_no">Roll Number</label>
+                        <input type="text" id="s-roll_no">
+                        <div class="field-error" id="s-roll_no-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="s-phone">Phone (10 digits)</label>
+                        <input type="text" id="s-phone" maxlength="10">
+                        <div class="field-error" id="s-phone-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="s-email">Email</label>
+                    <input type="email" id="s-email">
+                    <div class="field-error" id="s-email-error"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="s-department">Department</label>
+                        <select id="s-department">
+                            <option value="">Select</option>
+                            <option>CSE</option>
+                            <option>IT</option>
+                            <option>ECE</option>
+                            <option>EEE</option>
+                            <option>MECH</option>
+                            <option>CIVIL</option>
+                            <option>AIDS</option>
+                        </select>
+                        <div class="field-error" id="s-department-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="s-year">Year</label>
+                        <select id="s-year">
+                            <option value="">Select</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                        <div class="field-error" id="s-year-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="s-cgpa">CGPA (0 to 10)</label>
+                    <input type="number" id="s-cgpa" step="0.01" min="0" max="10">
+                    <div class="field-error" id="s-cgpa-error"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="s-password">Password (min 8 characters)</label>
+                        <input type="password" id="s-password" autocomplete="new-password">
+                        <div class="field-error" id="s-password-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="s-confirm">Confirm Password</label>
+                        <input type="password" id="s-confirm" autocomplete="new-password">
+                        <div class="field-error" id="s-confirm-error"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-block" id="studentBtn">Register as Student</button>
+            </form>
+
+            <!-- ===== COMPANY FORM ===== -->
+            <form id="companyForm" novalidate style="display:none;">
+                <div class="form-group">
+                    <label for="c-company_name">Company Name</label>
+                    <input type="text" id="c-company_name">
+                    <div class="field-error" id="c-company_name-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="c-email">Recruiter Email (used to login)</label>
+                    <input type="email" id="c-email">
+                    <div class="field-error" id="c-email-error"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="c-phone">Phone (10 digits)</label>
+                        <input type="text" id="c-phone" maxlength="10">
+                        <div class="field-error" id="c-phone-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="c-website">Website (optional)</label>
+                        <input type="text" id="c-website" placeholder="https://example.com">
+                        <div class="field-error" id="c-website-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="c-description">About the Company (optional)</label>
+                    <textarea id="c-description" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="c-password">Password (min 8 characters)</label>
+                        <input type="password" id="c-password" autocomplete="new-password">
+                        <div class="field-error" id="c-password-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="c-confirm">Confirm Password</label>
+                        <input type="password" id="c-confirm" autocomplete="new-password">
+                        <div class="field-error" id="c-confirm-error"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-block" id="companyBtn">Register Company</button>
+            </form>
+
+            <p class="form-footer">Already registered? <a href="login.html">Login</a></p>
         </div>
+    </main>
 
-        <div class="form-group">
-            <label for="confirmPassword">Confirm Password</label>
-            <input
-                type="password"
-                id="confirmPassword"
-                placeholder="Re-enter your password"
-                minlength="8"
-                required>
-        </div>
+    <script src="script.js"></script>
+    <script>
+        const studentForm = document.getElementById("studentForm");
+        const companyForm = document.getElementById("companyForm");
+        const studentTab = document.getElementById("studentTab");
+        const companyTab = document.getElementById("companyTab");
 
-        <div class="form-group">
-            <label for="department">Department</label>
+        // ----- Switch between the two forms -----
+        function showForm(which) {
+            hideMessage("message");
+            studentForm.style.display = which === "student" ? "block" : "none";
+            companyForm.style.display = which === "company" ? "block" : "none";
+            studentTab.classList.toggle("active", which === "student");
+            companyTab.classList.toggle("active", which === "company");
+        }
+        studentTab.addEventListener("click", function () { showForm("student"); });
+        companyTab.addEventListener("click", function () { showForm("company"); });
 
-            <select id="department" required>
+        // ----- Student registration -----
+        studentForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            hideMessage("message");
 
-                <option value="">Select Department</option>
+            const name = document.getElementById("s-name").value.trim();
+            const roll_no = document.getElementById("s-roll_no").value.trim();
+            const phone = document.getElementById("s-phone").value.trim();
+            const email = document.getElementById("s-email").value.trim();
+            const department = document.getElementById("s-department").value;
+            const year = document.getElementById("s-year").value;
+            const cgpa = document.getElementById("s-cgpa").value;
+            const password = document.getElementById("s-password").value;
+            const confirm = document.getElementById("s-confirm").value;
 
-                <option value="CSE">Computer Science and Engineering</option>
-                <option value="IT">Information Technology</option>
-                <option value="ECE">Electronics and Communication Engineering</option>
-                <option value="EEE">Electrical and Electronics Engineering</option>
-                <option value="MECH">Mechanical Engineering</option>
-                <option value="CIVIL">Civil Engineering</option>
-                <option value="AERO">Aeronautical Engineering</option>
-                <option value="AIML">Artificial Intelligence and Machine Learning</option>
-                <option value="AIDS">Artificial Intelligence and Data Science</option>
-                <option value="CSBS">Computer Science and Business Systems</option>
-                <option value="BIOTECH">Biotechnology</option>
-                <option value="CHEMICAL">Chemical Engineering</option>
-                <option value="OTHER">Other</option>
+            // Each check returns true when the field is fine
+            let ok = true;
+            ok = setFieldError("s-name", name.length < 2 ? "Enter your full name." : "") && ok;
+            ok = setFieldError("s-roll_no", roll_no === "" ? "Roll number is required." : "") && ok;
+            ok = setFieldError("s-phone", !PHONE_PATTERN.test(phone) ? "Enter a 10 digit phone number." : "") && ok;
+            ok = setFieldError("s-email", !EMAIL_PATTERN.test(email) ? "Enter a valid email." : "") && ok;
+            ok = setFieldError("s-department", department === "" ? "Select a department." : "") && ok;
+            ok = setFieldError("s-year", year === "" ? "Select your year." : "") && ok;
+            ok = setFieldError("s-cgpa",
+                (cgpa === "" || Number(cgpa) < 0 || Number(cgpa) > 10) ? "CGPA must be between 0 and 10." : "") && ok;
+            ok = setFieldError("s-password", password.length < 8 ? "At least 8 characters." : "") && ok;
+            ok = setFieldError("s-confirm", confirm !== password ? "Passwords do not match." : "") && ok;
+            if (!ok) return;
 
-            </select>
-        </div>
+            const button = document.getElementById("studentBtn");
+            button.disabled = true;
+            button.textContent = "Registering...";
 
-        <div class="form-group">
-            <label for="cgpa">CGPA</label>
-
-            <input
-                type="number"
-                id="cgpa"
-                placeholder="Enter CGPA (0 - 10)"
-                min="0"
-                max="10"
-                step="0.01"
-                required>
-        </div>
-
-        <div class="form-group">
-            <label for="phone">Phone Number</label>
-
-            <input
-                type="tel"
-                id="phone"
-                placeholder="Enter 10-digit phone number"
-                maxlength="10"
-                required>
-        </div>
-
-        <button type="submit" class="register-btn" id="registerBtn">
-            Register
-        </button>
-
-    </form>
-
-    <p id="message" role="status" aria-live="polite"></p>
-
-    <p class="login-text">
-        Already have an account?
-        <a href="index.html">Login</a>
-    </p>
-
-</div>
-
-<script>
-
-// ---- Config ----
-const API_BASE = "http://localhost:3000"; // change this in production
-const API_REGISTER = `${API_BASE}/api/students/register`;
-
-// ---- Elements ----
-const form            = document.getElementById("registerForm");
-const message         = document.getElementById("message");
-const password        = document.getElementById("password");
-const confirmPassword = document.getElementById("confirmPassword");
-const showPassword    = document.getElementById("showPassword");
-const registerBtn     = document.getElementById("registerBtn");
-
-// ---- Helpers ----
-function showMessage(text, type) {
-    message.textContent = text;
-    message.className = type || "";
-}
-
-function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function isStrongPassword(pw) {
-    // at least 8 chars, one lowercase, one uppercase, one digit
-    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(pw);
-}
-
-// ---- Show/Hide Password ----
-showPassword.addEventListener("click", function () {
-    if (password.type === "password") {
-        password.type = "text";
-        showPassword.textContent = "Hide";
-    } else {
-        password.type = "password";
-        showPassword.textContent = "Show";
-    }
-});
-
-// ---- Submit ----
-form.addEventListener("submit", async function (event) {
-    event.preventDefault();
-
-    // ---- Collect values ----
-    const name        = document.getElementById("name").value.trim();
-    const rollNo      = document.getElementById("rollNo").value.trim();
-    const email       = document.getElementById("email").value.trim();
-    const department  = document.getElementById("department").value;
-    const cgpaRaw     = document.getElementById("cgpa").value;
-    const phone       = document.getElementById("phone").value.trim();
-    const cgpa        = parseFloat(cgpaRaw);
-
-    // ---- Validate: name ----
-    if (!name) {
-        showMessage("Please enter your full name.", "error");
-        return;
-    }
-
-    // ---- Validate: roll number ----
-    if (!rollNo) {
-        showMessage("Please enter your roll number.", "error");
-        return;
-    }
-
-    // ---- Validate: email ----
-    if (!isValidEmail(email)) {
-        showMessage("Please enter a valid email address.", "error");
-        return;
-    }
-
-    // ---- Validate: password ----
-    if (!isStrongPassword(password.value)) {
-        showMessage(
-            "Password must be 8+ characters and include uppercase, lowercase, and a number.",
-            "error"
-        );
-        return;
-    }
-
-    // ---- Validate: confirm password ----
-    if (password.value !== confirmPassword.value) {
-        showMessage("Passwords do not match.", "error");
-        return;
-    }
-
-    // ---- Validate: department ----
-    if (!department) {
-        showMessage("Please select a department.", "error");
-        return;
-    }
-
-    // ---- Validate: CGPA ----
-    if (isNaN(cgpa) || cgpa < 0 || cgpa > 10) {
-        showMessage("CGPA must be a number between 0 and 10.", "error");
-        return;
-    }
-
-    // ---- Validate: phone ----
-    if (!/^[0-9]{10}$/.test(phone)) {
-        showMessage("Please enter a valid 10-digit phone number.", "error");
-        return;
-    }
-
-    // ---- Build payload ----
-    const student = {
-        name,
-        rollNo,
-        email,
-        password: password.value,
-        department,
-        cgpa,
-        phone
-    };
-
-    // ---- Disable button to prevent double submit ----
-    registerBtn.disabled = true;
-    const originalBtnText = registerBtn.textContent;
-    registerBtn.textContent = "Registering...";
-    showMessage("Registering...", "");
-
-    try {
-        const response = await fetch(API_REGISTER, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(student)
+            try {
+                await apiRequest("/students/register", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        name: name,
+                        roll_no: roll_no,
+                        email: email,
+                        phone: phone,
+                        department: department,
+                        year: Number(year),
+                        cgpa: Number(cgpa),
+                        password: password
+                    })
+                });
+                studentForm.reset();
+                showMessage("message", "Registration successful! You can now login.", "success");
+            } catch (error) {
+                showMessage("message", error.message, "error");
+            } finally {
+                button.disabled = false;
+                button.textContent = "Register as Student";
+            }
         });
 
-        // Handle non-JSON responses gracefully
-        let data;
-        try {
-            data = await response.json();
-        } catch (parseErr) {
-            data = { message: "Unexpected server response." };
-        }
+        // ----- Company registration -----
+        companyForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            hideMessage("message");
 
-        if (response.ok) {
-            showMessage(data.message || "Registration successful!", "success");
-            form.reset();
-        } else {
-            const baseMsg = data.message || "Registration failed.";
-            const extra   = data.error ? ": " + data.error : "";
-            showMessage(baseMsg + extra, "error");
-        }
-    } catch (error) {
-        showMessage("Unable to connect to the server.", "error");
-    } finally {
-        registerBtn.disabled = false;
-        registerBtn.textContent = originalBtnText;
-    }
-});
+            const company_name = document.getElementById("c-company_name").value.trim();
+            const email = document.getElementById("c-email").value.trim();
+            const phone = document.getElementById("c-phone").value.trim();
+            const website = document.getElementById("c-website").value.trim();
+            const description = document.getElementById("c-description").value.trim();
+            const password = document.getElementById("c-password").value;
+            const confirm = document.getElementById("c-confirm").value;
 
-</script>
+            let ok = true;
+            ok = setFieldError("c-company_name", company_name.length < 2 ? "Enter the company name." : "") && ok;
+            ok = setFieldError("c-email", !EMAIL_PATTERN.test(email) ? "Enter a valid email." : "") && ok;
+            ok = setFieldError("c-phone", !PHONE_PATTERN.test(phone) ? "Enter a 10 digit phone number." : "") && ok;
+            ok = setFieldError("c-website",
+                (website !== "" && !/^https?:\/\/.+/.test(website)) ? "Website must start with http:// or https://" : "") && ok;
+            ok = setFieldError("c-password", password.length < 8 ? "At least 8 characters." : "") && ok;
+            ok = setFieldError("c-confirm", confirm !== password ? "Passwords do not match." : "") && ok;
+            if (!ok) return;
 
+            const button = document.getElementById("companyBtn");
+            button.disabled = true;
+            button.textContent = "Registering...";
+
+            try {
+                await apiRequest("/companies/register", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        company_name: company_name,
+                        email: email,
+                        phone: phone,
+                        website: website,
+                        description: description,
+                        password: password
+                    })
+                });
+                companyForm.reset();
+                showMessage("message", "Company registered! You can now login.", "success");
+            } catch (error) {
+                showMessage("message", error.message, "error");
+            } finally {
+                button.disabled = false;
+                button.textContent = "Register Company";
+            }
+        });
+    </script>
 </body>
 </html>

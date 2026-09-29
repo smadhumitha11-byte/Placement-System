@@ -1,49 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Placement Cell Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Cell Portal</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <nav id="navbar"></nav>
 
-<div class="container">
-    <h1>Placement Cell</h1>
-    <h2>Student Login</h2>
+    <section class="hero">
+        <h1>Placement Cell Recruiter and Interview Scheduler</h1>
+        <p>One place for students, recruiters and the placement cell to manage jobs,
+           applications and interviews.</p>
+        <a class="btn btn-light" href="register.html">Get Started</a>
+        <a class="btn btn-light" href="login.html">Login</a>
+    </section>
 
-    <form id="loginForm">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
+    <main class="container">
+        <h2 class="section-title">How it works</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>For Students</h3>
+                <p>Build your profile, upload your resume, check your eligibility, apply for jobs
+                   and track your interviews and results.</p>
+            </div>
+            <div class="card">
+                <h3>For Recruiters</h3>
+                <p>Post jobs, review applicants, shortlist candidates and schedule interviews
+                   online or on campus.</p>
+            </div>
+            <div class="card">
+                <h3>For Placement Cell</h3>
+                <p>Monitor students, companies and applications, and generate placement
+                   reports in one dashboard.</p>
+            </div>
+        </div>
+    </main>
 
-        <button type="submit">Login</button>
-    </form>
+    <footer class="footer">College Software Engineering Mini Project</footer>
 
-    <p id="message"></p>
-
-    <p>Don't have an account? <a href="register.html">Register</a></p>
-</div>
-
-<script>
-document.getElementById("loginForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-
-    const student = {
-        email: document.getElementById("email").value,
-        password: document.getElementById("password").value
-    };
-
-    const response = await fetch("http://localhost:3000/api/students/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(student)
-    });
-
-    const data = await response.json();
-
-    document.getElementById("message").textContent = data.message;
-});
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>
