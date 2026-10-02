@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Placement Cell Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav id="navbar"></nav>
+
+    <main class="container">
+        <h2 class="section-title" style="margin-top:0;">Placement Cell Dashboard</h2>
+        <div id="pageMessage" class="alert"></div>
+
+        <div class="tabs" id="tabs" style="flex-wrap:wrap;">
+            <button type="button" class="tab-btn active" data-tab="overview">Overview</button>
+            <button type="button" class="tab-btn" data-tab="students">Students</button>
+            <button type="button" class="tab-btn" data-tab="companies">Companies</button>
+            <button type="button" class="tab-btn" data-tab="jobs">Jobs</button>
+            <button type="button" class="tab-btn" data-tab="applications">Applications</button>
+            <button type="button" class="tab-btn" data-tab="interviews">Interviews</button>
+            <button type="button" class="tab-btn" data-tab="records">Records</button>
+            <button type="button" class="tab-btn" data-tab="reports">Reports</button>
+        </div>
+
+        <div id="panel-overview"></div>
+        <div id="panel-students" style="display:none;">
+            <form id="studentSearch" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <input type="text" id="studentSearchBox" placeholder="Search by name, roll no, email or department"
+                       style="flex:1;min-width:200px;">
+                <button type="submit" class="btn">Search</button>
+            </form>
+            <div id="studentsTable"></div>
+        </div>
+        <div id="panel-companies" style="display:none;"></div>
+        <div id="panel-jobs" style="display:none;"></div>
+        <div id="panel-applications" style="display:none;"></div>
+        <div id="panel-interviews" style="display:none;"></div>
+        <div id="panel-records" style="display:none;"></div>
+        <div id="panel-reports" style="display:none;"></div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        requireLogin("admin");
+
+        // Builds a table. headers = ["Name", ...], rows = array of arrays of ready HTML strings
+        function makeTable(headers, rows, emptyText) {
+            if (rows.length === 0) return "<p>" + emptyText + "</p>";
+            return '<div class="table-wrap"><table><thead><tr>' +
+                headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") +
+                "</tr></thead><tbody>" +
+                rows.map(function (r) {
+                    return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+                }).join("") + "</tbody></table></div>";
+        }
+
+        const e = escapeHtml;
+        function money(v) { return v === null || v === undefined ? "-" : e(v) + " LPA"; }
+        function when(v) { return e(String(v).slice(0, 16)); }
+        function delBtn(act, id) {
+            return '<button type="button" class="btn btn-small btn-danger" data-act="' + act + '" data-id="' + id + '">Delete</button>';
+        }
+
+        // Each tab has one loader that fetches data and draws its panel
+        const loaders = {
+            async overview() {
+                const d = await apiRequest("/admin/dashboard");
+                const cards = [["Students", d.students], ["Companies", d.companies], ["Jobs", d.jobs],
+                               ["Applications", d.applications], ["Interviews", d.interviews],
+                               ["Placed Students", d.placed_students]];
+                document.getElementById("panel-overview").innerHTML = '<div class="grid">' +
+                    cards.map(function (c) {
+                        return '<div class="card"><p>' + c[0] + '</p><div class="stat-number">' + e(c[1]) + "</div></div>";
+                    }).join("") + "</div>";
+            },
+
+            async students() {
+                const search = document.getElementById("studentSearchBox").value.trim();
+                const list = await apiRequest("/admin/students?search=" + encodeURIComponent(search));
+                document.getElementById("studentsTable").innerHTML = makeTable(
+                    ["Name", "Roll No", "Email", "Dept", "Year", "CGPA", "Resume", "Placed", "Action"],
+                    list.map(function (s) {
+                        return [e(s.name), e(s.roll_no || "-"), e(s.email), e(s.department), e(s.year), e(s.cgpa),
+                                s.resume_path ? "Yes" : "No",
+                                s.placed > 0 ? '<span class="badge badge-selected">Placed</span>' : "-",
+                                delBtn("del-student", s.id)];
+                    }), "No students found.");
+            },
+
+            async companies() {
+                const list = await apiRequest("/admin/companies");
+                document.getElementById("panel-companies").innerHTML = makeTable(
+                    ["Company", "Email", "Phone", "Website", "Jobs", "Action"],
+                    list.map(function (c) {
+                        return [e(c.company_name), e(c.email), e(c.phone || "-"), e(c.website || "-"),
+                                e(c.job_count), delBtn("del-company", c.id)];
+                    }), "No companies registered.");
+            },
+
+            async jobs() {
+                const list = await apiRequest("/admin/jobs");
+                document.getElementById("panel-jobs").innerHTML = makeTable(
+                    ["Title", "Company", "Departments", "Min CGPA", "Package", "Deadline", "Applicants", "Status", "Actions"],
+                    list.map(function (j) {
+                        const next = j.status === "Open" ? "Closed" : "Open";
+                        return [e(j.title), e(j.company_name), e(j.allowed_departments), e(j.min_cgpa), money(j.package_lpa),
+                                e(j.deadline || "-"), e(j.applicant_count), statusBadge(j.status),
+                                '<button type="button" class="btn btn-small btn-light" style="border:1px solid var(--border);" ' +
+                                'data-act="job-status" data-status="' + next + '" data-id="' + j.id + '">Mark ' + next + "</button> " +
+                                delBtn("del-job", j.id)];
+                    }), "No jobs posted.");
+            },
+
+            async applications() {
+                const list = await apiRequest("/admin/applications");
+                document.getElementById("panel-applications").innerHTML = makeTable(
+                    ["Student", "Roll No", "Job", "Company", "Applied On", "Status"],
+                    list.map(function (a) {
+                        return [e(a.student_name), e(a.roll_no || "-"), e(a.title), e(a.company_name),
+                                e(String(a.applied_at).slice(0, 10)), statusBadge(a.status)];
+                    }), "No applications yet.");
+            },
+
+            async interviews() {
+                const list = await apiRequest("/admin/interviews");
+                document.getElementById("panel-interviews").innerHTML = makeTable(
+                    ["Student", "Job", "Company", "Date and Time", "Mode", "Link / Venue", "Status"],
+                    list.map(function (i) {
+                        return [e(i.student_name) + " (" + e(i.roll_no || "-") + ")", e(i.title), e(i.company_name),
+                                when(i.interview_date), e(i.mode), e(i.location_or_link), statusBadge(i.status)];
+                    }), "No interviews scheduled.");
+            },
+
+            async records() {
+                const list = await apiRequest("/admin/records");
+                document.getElementById("panel-records").innerHTML = makeTable(
+                    ["Student", "Roll No", "Dept", "Company", "Job", "Package", "Placed On"],
+                    list.map(function (r) {
+                        return [e(r.student_name), e(r.roll_no || "-"), e(r.department), e(r.company_name),
+                                e(r.title), money(r.package_lpa), e(r.placed_on)];
+                    }), "No placement records yet.");
+            },
+
+            async reports() {
+                const r = await apiRequest("/admin/reports");
+                const cards = [["Total Students", r.total_students], ["Placed Students", r.placed_students],
+                               ["Placement %", r.placement_percentage + "%"], ["Highest Package", money(r.highest_package)],
+                               ["Average Package", money(r.average_package)]];
+                document.getElementById("panel-reports").innerHTML =
+                    '<div class="grid">' + cards.map(function (c) {
+                        return '<div class="card"><p>' + c[0] + '</p><div class="stat-number" style="font-size:1.5rem;">' +
+                               (typeof c[1] === "string" && c[1].indexOf("<") !== -1 ? c[1] : e(c[1])) + "</div></div>";
+                    }).join("") + "</div>" +
+                    '<h3 class="section-title">By Department</h3>' +
+                    makeTable(["Department", "Total Students", "Placed"],
+                        r.by_department.map(function (d) { return [e(d.department), e(d.total_students), e(d.placed_students)]; }),
+                        "No data.") +
+                    '<h3 class="section-title">By Company</h3>' +
+                    makeTable(["Company", "Students Placed", "Average Package"],
+                        r.by_company.map(function (c) {
+                            return [e(c.company_name), e(c.placed_students),
+                                    c.average_package === null ? "-" : e(Math.round(c.average_package * 100) / 100) + " LPA"];
+                        }), "No data.");
+            }
+        };
+
+        // ----- Tabs -----
+        let currentTab = "overview";
+
+        async function showTab(name) {
+            currentTab = name;
+            hideMessage("pageMessage");
+            document.querySelectorAll(".tab-btn").forEach(function (b) {
+                b.classList.toggle("active", b.getAttribute("data-tab") === name);
+            });
+            Object.keys(loaders).forEach(function (t) {
+                document.getElementById("panel-" + t).style.display = t === name ? "block" : "none";
+            });
+            try {
+                await loaders[name]();
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            }
+        }
+
+        document.getElementById("tabs").addEventListener("click", function (event) {
+            const button = event.target.closest(".tab-btn");
+            if (button) showTab(button.getAttribute("data-tab"));
+        });
+
+        document.getElementById("studentSearch").addEventListener("submit", function (event) {
+            event.preventDefault();
+            showTab("students");
+        });
+
+        // ----- Delete and status buttons (one listener for all panels) -----
+        const actions = {
+            "del-student": { url: "/admin/students/", method: "DELETE",
+                ask: "Delete this student? Their applications, interviews and records will also be deleted." },
+            "del-company": { url: "/admin/companies/", method: "DELETE",
+                ask: "Delete this company? Its jobs, applications and records will also be deleted." },
+            "del-job": { url: "/admin/jobs/", method: "DELETE",
+                ask: "Delete this job? Its applications and interviews will also be deleted." },
+            "job-status": { url: "/admin/jobs/", method: "PUT", suffix: "/status", ask: "Change the job status?" }
+        };
+
+        document.querySelector("main").addEventListener("click", async function (event) {
+            const button = event.target.closest("button[data-act]");
+            if (!button) return;
+
+            const action = actions[button.getAttribute("data-act")];
+            if (!action || !confirm(action.ask)) return;
+
+            hideMessage("pageMessage");
+            try {
+                const options = { method: action.method };
+                if (action.method === "PUT") {
+                    options.body = JSON.stringify({ status: button.getAttribute("data-status") });
+                }
+                const result = await apiRequest(action.url + button.getAttribute("data-id") + (action.suffix || ""), options);
+                await showTab(currentTab);
+                showMessage("pageMessage", result.message, "success");
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            }
+        });
+
+        showTab("overview");
+    </script>
+</body>
+</html>
