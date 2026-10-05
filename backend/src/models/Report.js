@@ -84,9 +84,13 @@ const Report = {
         return rows;
     },
 
-    async interviews() {
+       async interviews() {
         const [rows] = await db.query(
-            `SELECT i.id, i.interview_date, i.mode, i.location_or_link, i.status,
+            `SELECT i.id, i.interview_date,
+                    COALESCE(i.end_time, DATE_ADD(i.interview_date, INTERVAL 60 MINUTE)) AS end_time,
+                    TIMESTAMPDIFF(MINUTE, i.interview_date,
+                        COALESCE(i.end_time, DATE_ADD(i.interview_date, INTERVAL 60 MINUTE))) AS duration_minutes,
+                    i.mode, i.location_or_link, i.status,
                     s.name AS student_name, s.roll_no, j.title, c.company_name
              FROM interviews i
              JOIN applications a ON a.id = i.application_id
