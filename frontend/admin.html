@@ -129,7 +129,7 @@
                     ["Student", "Job", "Company", "Date and Time", "Mode", "Link / Venue", "Status"],
                     list.map(function (i) {
                         return [e(i.student_name) + " (" + e(i.roll_no || "-") + ")", e(i.title), e(i.company_name),
-                                when(i.interview_date), e(i.mode), e(i.location_or_link), statusBadge(i.status)];
+                                interviewTimes(i), e(i.mode), e(i.location_or_link), statusBadge(i.status)];
                     }), "No interviews scheduled.");
             },
 

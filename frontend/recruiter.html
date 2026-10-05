@@ -143,7 +143,7 @@
                     <input type="hidden" id="i-application_id">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="i-date">Date and Time</label>
+                            <label for="i-date">Start Date and Time</label>
                             <input type="datetime-local" id="i-date">
                             <div class="field-error" id="i-date-error"></div>
                         </div>
@@ -154,6 +154,15 @@
                                 <option>Offline</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="i-duration">Duration</label>
+                        <select id="i-duration">
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60" selected>60 minutes</option>
+                        </select>
+                        <small id="i-endpreview" style="color:var(--muted);"></small>
                     </div>
                     <div class="form-group">
                         <label for="i-location">Meeting Link or Venue</label>
@@ -509,6 +518,18 @@
             document.getElementById("scheduleSection").style.display = "none";
         });
 
+        // Shows the calculated end time under the Duration box
+        function updateEndPreview() {
+            const value = document.getElementById("i-date").value;
+            const box = document.getElementById("i-endpreview");
+            if (!value) { box.textContent = ""; return; }
+            const minutes = Number(document.getElementById("i-duration").value);
+            const end = new Date(new Date(value).getTime() + minutes * 60000);
+            box.textContent = "Ends at " + end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        }
+        document.getElementById("i-date").addEventListener("input", updateEndPreview);
+        document.getElementById("i-duration").addEventListener("change", updateEndPreview);
+
         document.getElementById("scheduleForm").addEventListener("submit", async function (event) {
             event.preventDefault();
             hideMessage("pageMessage");
@@ -531,11 +552,13 @@
                     body: JSON.stringify({
                         application_id: Number(document.getElementById("i-application_id").value),
                         interview_date: date,
+                        duration_minutes: Number(document.getElementById("i-duration").value),
                         mode: mode,
                         location_or_link: place
                     })
                 });
                 document.getElementById("scheduleForm").reset();
+                document.getElementById("i-endpreview").textContent = "";
                 document.getElementById("scheduleSection").style.display = "none";
                 showMessage("pageMessage", "Interview scheduled. The student has been notified.", "success");
                 loadInterviews();
@@ -564,7 +587,7 @@
                     return "<tr>" +
                         "<td>" + escapeHtml(i.student_name) + " (" + escapeHtml(i.roll_no || "-") + ")</td>" +
                         "<td>" + escapeHtml(i.title) + "</td>" +
-                        "<td>" + escapeHtml(String(i.interview_date).slice(0, 16)) + "</td>" +
+                        "<td>" + interviewTimes(i) + "</td>" +
                         "<td>" + escapeHtml(i.mode) + "</td>" +
                         "<td>" + escapeHtml(i.location_or_link) + "</td>" +
                         "<td>" + statusBadge(i.status) + "</td>" +

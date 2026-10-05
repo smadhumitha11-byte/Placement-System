@@ -137,6 +137,8 @@ function renderNavbar() {
 }
 
 document.addEventListener("DOMContentLoaded", renderNavbar);
+
+
 // ----- Sidebar for student pages -----
 document.addEventListener("DOMContentLoaded", function () {
     const main = document.querySelector("main");
@@ -164,6 +166,8 @@ document.addEventListener("DOMContentLoaded", function () {
     shell.appendChild(main);
     document.body.classList.add("with-sidebar");
 });
+
+
 // ----- Desktop push notifications (student) -----
 function urlBase64ToUint8Array(base64String) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -195,4 +199,23 @@ async function enablePush() {
         });
     }
     await apiRequest("/push/subscribe", { method: "POST", body: JSON.stringify(subscription.toJSON()) });
+}
+
+
+// ----- Interview times: "2026-10-20 10:30:00" -> "10:30 AM" -----
+function formatClock(text) {
+    const m = /(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})/.exec(String(text));
+    if (!m) return "";
+    let hour = Number(m[2]);
+    const suffix = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12;
+    return hour + ":" + m[3] + " " + suffix;
+}
+
+// Date, Start, End and Duration as ready-to-use HTML
+function interviewTimes(i) {
+    return escapeHtml(String(i.interview_date).slice(0, 10)) +
+        "<br>Start: " + escapeHtml(formatClock(i.interview_date)) +
+        "<br>End: " + escapeHtml(formatClock(i.end_time || i.interview_date)) +
+        "<br>Duration: " + escapeHtml(i.duration_minutes || 60) + " minutes";
 }
