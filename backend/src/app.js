@@ -14,6 +14,7 @@ const interviewRoutes = require("./routes/interviewRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const resumeRoutes = require("./routes/resumeRoutes");
+const pushRoutes = require("./routes/pushRoutes");
 
 if (!process.env.JWT_SECRET) {
     console.error("JWT_SECRET is missing in backend/.env");
@@ -35,6 +36,7 @@ app.use("/api/interviews", interviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/resumes", resumeRoutes);
+app.use("/api/push", pushRoutes);
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });

@@ -13,6 +13,13 @@
         <h2 class="section-title" style="margin-top:0;">Student Dashboard</h2>
         <div id="pageMessage" class="alert"></div>
 
+        <div class="grid" style="margin-bottom:8px;">
+            <div class="card"><p>Applications</p><div class="stat-number" id="st-total">-</div></div>
+            <div class="card"><p>Shortlisted</p><div class="stat-number" id="st-short">-</div></div>
+            <div class="card"><p>Upcoming Interviews</p><div class="stat-number" id="st-int">-</div></div>
+            <div class="card"><p>Unread Notifications</p><div class="stat-number" id="st-note">-</div></div>
+        </div>
+
         <div class="grid">
             <div class="card">
                 <h3>Placement Status</h3>
@@ -94,12 +101,32 @@
         <div class="card">
             <div id="notificationList"><p>Loading...</p></div>
             <button type="button" class="btn btn-small" id="readAllBtn" style="margin-top:10px;">Mark all as read</button>
+                        <button type="button" class="btn btn-small btn-light" id="pushBtn"
+                    style="margin-top:10px;border:1px solid var(--border);">🔔 Enable desktop notifications</button>
         </div>
     </main>
 
     <script src="script.js"></script>
     <script>
         requireLogin("student");
+
+        // ----- Summary cards at the top -----
+        async function loadStats() {
+            try {
+                const apps = await apiRequest("/applications/my");
+                const interviews = await apiRequest("/interviews/my");
+                const notes = await apiRequest("/notifications");
+                document.getElementById("st-total").textContent = apps.length;
+                document.getElementById("st-short").textContent =
+                    apps.filter(function (a) { return a.status === "Shortlisted"; }).length;
+                document.getElementById("st-int").textContent =
+                    interviews.filter(function (i) { return i.status === "Scheduled"; }).length;
+                document.getElementById("st-note").textContent =
+                    notes.filter(function (n) { return !n.is_read; }).length;
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            }
+        }
 
         // ----- Load the profile into the form -----
         async function loadProfile() {
@@ -237,11 +264,22 @@
             try {
                 await apiRequest("/notifications/read-all", { method: "PUT" });
                 loadNotifications();
+                loadStats();
+            } catch (error) {
+                showMessage("pageMessage", error.message, "error");
+            }
+        });
+                document.getElementById("pushBtn").addEventListener("click", async function () {
+            hideMessage("pageMessage");
+            try {
+                await enablePush();
+                showMessage("pageMessage", "Desktop notifications are on for this browser.", "success");
             } catch (error) {
                 showMessage("pageMessage", error.message, "error");
             }
         });
 
+        loadStats();
         loadProfile();
         loadPlacement();
         loadNotifications();

@@ -10,7 +10,6 @@ const Interview = {
         return result.insertId;
     },
 
-    // True if this application already has a Scheduled interview
     async hasScheduled(applicationId) {
         const [rows] = await db.query(
             "SELECT id FROM interviews WHERE application_id = ? AND status = 'Scheduled'",
@@ -19,7 +18,6 @@ const Interview = {
         return rows.length > 0;
     },
 
-    // An interview, but only if its job belongs to this company
     async findForCompany(id, companyId) {
         const [rows] = await db.query(
             `SELECT i.id, i.status, a.student_id, j.title
@@ -38,7 +36,7 @@ const Interview = {
 
     async findByStudent(studentId) {
         const [rows] = await db.query(
-            `SELECT i.id, i.interview_date, i.mode, i.location_or_link, i.status,
+            `SELECT i.id, i.application_id, i.interview_date, i.mode, i.location_or_link, i.status,
                     j.title, c.company_name
              FROM interviews i
              JOIN applications a ON a.id = i.application_id

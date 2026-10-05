@@ -137,3 +137,62 @@ function renderNavbar() {
 }
 
 document.addEventListener("DOMContentLoaded", renderNavbar);
+// ----- Sidebar for student pages -----
+document.addEventListener("DOMContentLoaded", function () {
+    const main = document.querySelector("main");
+    if (getRole() !== "student" || !main) return;
+
+    const page = window.location.pathname.split("/").pop();
+    const menu = [
+        ["student.html", "📊 Dashboard"],
+        ["jobs.html", "💼 Browse Jobs"],
+        ["applications.html", "📄 My Applications"],
+        ["interview.html", "📅 Interviews"]
+    ];
+    if (!menu.some(function (m) { return m[0] === page; })) return;
+
+    const aside = document.createElement("aside");
+    aside.className = "sidebar";
+    aside.innerHTML = menu.map(function (m) {
+        return '<a href="' + m[0] + '"' + (m[0] === page ? ' class="active"' : "") + ">" + m[1] + "</a>";
+    }).join("");
+
+    const shell = document.createElement("div");
+    shell.className = "app-shell";
+    main.parentNode.insertBefore(shell, main);
+    shell.appendChild(aside);
+    shell.appendChild(main);
+    document.body.classList.add("with-sidebar");
+});
+// ----- Desktop push notifications (student) -----
+function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(base64);
+    const output = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) output[i] = raw.charCodeAt(i);
+    return output;
+}
+
+async function enablePush() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        throw new Error("This browser does not support push notifications.");
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+        throw new Error("Notifications were blocked. Allow them in the browser's site settings.");
+    }
+
+    const registration = await navigator.serviceWorker.register("sw.js");
+    await navigator.serviceWorker.ready;
+
+    const data = await apiRequest("/push/key");
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(data.key)
+        });
+    }
+    await apiRequest("/push/subscribe", { method: "POST", body: JSON.stringify(subscription.toJSON()) });
+}

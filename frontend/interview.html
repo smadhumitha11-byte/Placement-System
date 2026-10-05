@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Interviews - Placement Cell Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav id="navbar"></nav>
+
+    <main class="container">
+        <h2 class="section-title" style="margin-top:0;">My Interview Schedule</h2>
+        <div id="pageMessage" class="alert"></div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Job</th>
+                        <th>Company</th>
+                        <th>Date and Time</th>
+                        <th>Mode</th>
+                        <th>Link / Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="6">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        requireLogin("student");
+
+        const tableBody = document.getElementById("tableBody");
+
+        // Online links become clickable, but only if they start with http:// or https://
+        function linkOrText(mode, value) {
+            const safe = escapeHtml(value);
+            if (mode === "Online" && /^https?:\/\//.test(value)) {
+                return '<a href="' + safe + '" target="_blank" rel="noopener">' + safe + "</a>";
+            }
+            return safe;
+        }
+
+        async function loadInterviews() {
+            try {
+                const list = await apiRequest("/interviews/my");
+                if (list.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6">No interviews scheduled yet.</td></tr>';
+                    return;
+                }
+                tableBody.innerHTML = list.map(function (i) {
+                    return "<tr>" +
+                        "<td>" + escapeHtml(i.title) + "</td>" +
+                        "<td>" + escapeHtml(i.company_name) + "</td>" +
+                        "<td>" + escapeHtml(String(i.interview_date).slice(0, 16)) + "</td>" +
+                        "<td>" + escapeHtml(i.mode) + "</td>" +
+                        "<td>" + linkOrText(i.mode, i.location_or_link) + "</td>" +
+                        "<td>" + statusBadge(i.status) + "</td>" +
+                        "</tr>";
+                }).join("");
+            } catch (error) {
+                tableBody.innerHTML = '<tr><td colspan="6">Could not load interviews.</td></tr>';
+                showMessage("pageMessage", error.message, "error");
+            }
+        }
+
+        loadInterviews();
+    </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 const db = require("../db/connection");
+const { sendToStudent } = require("../utils/push");
 
 const Notification = {
     async create(studentId, message) {
@@ -6,6 +7,10 @@ const Notification = {
             "INSERT INTO notifications (student_id, message) VALUES (?, ?)",
             [studentId, message]
         );
+        // Push is a bonus: if it fails, the saved notification still exists
+        sendToStudent(studentId, message).catch(function (error) {
+            console.error("Push failed:", error.message);
+        });
     },
 
     async findByStudent(studentId) {

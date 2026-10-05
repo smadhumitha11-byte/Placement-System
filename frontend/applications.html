@@ -25,23 +25,7 @@
             </select>
         </div>
 
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Job</th>
-                        <th>Company</th>
-                        <th>Package</th>
-                        <th>Applied On</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="6">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
+        <div id="appList"><p>Loading...</p></div>
     </main>
 
     <script src="script.js"></script>
@@ -49,7 +33,46 @@
         requireLogin("student");
 
         let allApplications = [];
-        const tableBody = document.getElementById("tableBody");
+        let allInterviews = [];
+        const appList = document.getElementById("appList");
+
+        // Works out the four steps of the tracker for one application
+        function buildSteps(a) {
+            const mine = allInterviews.filter(function (i) { return i.application_id === a.id; });
+            const last = mine.length ? mine[mine.length - 1] : null;
+
+            const labels = ["Applied", "Shortlisted", "Interview", "Selected"];
+            const notes = [String(a.applied_at).slice(0, 10), "", "", ""];
+            let state = ["done", "pending", "pending", "pending"];
+
+            if (a.status === "Shortlisted" || a.status === "Selected" || (a.status === "Rejected" && last)) {
+                state[1] = "done";
+            }
+            if (last) {
+                notes[2] = String(last.interview_date).slice(0, 16) + " (" + last.status + ")";
+                if (last.status === "Completed") state[2] = "done";
+                if (last.status === "Scheduled") state[2] = "current";
+            }
+
+            if (a.status === "Selected") {
+                state = ["done", "done", "done", "done"];
+            } else if (a.status === "Rejected") {
+                const failAt = last ? 3 : 1;
+                state[failAt] = "fail";
+                labels[failAt] = "Rejected";
+            } else if (a.status === "Withdrawn") {
+                state[1] = "fail";
+                labels[1] = "Withdrawn";
+            } else {
+                // Applied or Shortlisted: the next waiting step is the current one
+                const next = state.indexOf("pending");
+                if (next !== -1) state[next] = "current";
+            }
+
+            return labels.map(function (label, i) {
+                return { label: label, note: notes[i], state: state[i] };
+            });
+        }
 
         function draw() {
             const filter = document.getElementById("statusFilter").value;
@@ -58,39 +81,45 @@
             });
 
             if (rows.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6">No applications found.</td></tr>';
+                appList.innerHTML = "<p>No applications found.</p>";
                 return;
             }
 
-            tableBody.innerHTML = rows.map(function (a) {
+            appList.innerHTML = rows.map(function (a) {
                 const canWithdraw = a.status === "Applied" || a.status === "Shortlisted";
-                return "<tr>" +
-                    "<td>" + escapeHtml(a.title) + "</td>" +
-                    "<td>" + escapeHtml(a.company_name) + "</td>" +
-                    "<td>" + escapeHtml(a.package_lpa === null ? "-" : a.package_lpa + " LPA") + "</td>" +
-                    "<td>" + escapeHtml(String(a.applied_at).slice(0, 10)) + "</td>" +
-                    "<td>" + statusBadge(a.status) + "</td>" +
-                    "<td>" + (canWithdraw
-                        ? '<button type="button" class="btn btn-small btn-danger" data-id="' + a.id + '">Withdraw</button>'
-                        : "-") + "</td>" +
-                    "</tr>";
+                const steps = buildSteps(a).map(function (s) {
+                    return '<li class="' + s.state + '">' + escapeHtml(s.label) +
+                           (s.note ? "<br><small>" + escapeHtml(s.note) + "</small>" : "") + "</li>";
+                }).join("");
+
+                return '<div class="card" style="margin-bottom:16px;">' +
+                    '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">' +
+                        "<div><h3>" + escapeHtml(a.title) + "</h3>" +
+                        "<p><strong>" + escapeHtml(a.company_name) + "</strong> &middot; " +
+                        escapeHtml(a.package_lpa === null ? "Package not stated" : a.package_lpa + " LPA") + "</p></div>" +
+                        "<div>" + statusBadge(a.status) + (canWithdraw
+                            ? ' <button type="button" class="btn btn-small btn-danger" data-id="' + a.id + '">Withdraw</button>'
+                            : "") + "</div>" +
+                    "</div>" +
+                    '<ol class="tracker">' + steps + "</ol></div>";
             }).join("");
         }
 
-        async function loadApplications() {
+        async function loadAll() {
             try {
                 allApplications = await apiRequest("/applications/my");
+                allInterviews = await apiRequest("/interviews/my");
                 draw();
             } catch (error) {
-                tableBody.innerHTML = '<tr><td colspan="6">Could not load applications.</td></tr>';
+                appList.innerHTML = "";
                 showMessage("pageMessage", error.message, "error");
             }
         }
 
         document.getElementById("statusFilter").addEventListener("change", draw);
 
-        tableBody.addEventListener("click", async function (event) {
-            const button = event.target.closest("button");
+        appList.addEventListener("click", async function (event) {
+            const button = event.target.closest("button[data-id]");
             if (!button) return;
             if (!confirm("Withdraw this application? This cannot be undone.")) return;
 
@@ -98,13 +127,13 @@
             try {
                 await apiRequest("/applications/" + button.getAttribute("data-id") + "/withdraw", { method: "PUT" });
                 showMessage("pageMessage", "Application withdrawn.", "success");
-                loadApplications();
+                loadAll();
             } catch (error) {
                 showMessage("pageMessage", error.message, "error");
             }
         });
 
-        loadApplications();
+        loadAll();
     </script>
 </body>
 </html>
